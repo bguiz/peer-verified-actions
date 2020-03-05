@@ -8,6 +8,13 @@
     - TODO need to flesh out the economics here
 4. All of this feeds into a tiered weekly leaderboard, as well as an all-time leaderboard
 
+## Desired outcomes
+
+- Users have profiles similar to social media dedicated to their actions
+- Their actions are peer verified
+- Raise awareness about individual actions that help focus are
+- Peer pressure incentives to take individual actions that help focus area
+
 ## UML Sequence diagram
 
 ![Sequence diagram for status based profiles for peer verified actions](status-profiles-based-on-peer-verified-actions.plantuml.png)
