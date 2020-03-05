@@ -1,0 +1,110 @@
+@startuml
+
+title "Status profiles based on peer verified actions"
+
+actor "Action Taker\nUser\nAuthenticated" as T
+actor "Action Verifier\nUser\nAuthenticated" as V
+actor "Any\nUser\nUnauthenticated" as U
+boundary "Action" as A
+entity "Server" as S
+entity "Leaderboard" as L
+database "File\nStore" as FS
+database "Mutable\nData Store" as MDB
+database "Immutable\nData Store" as IDB
+boundary "Social\nMedia" as SM
+
+== Take action ==
+
+T -> A : Performs task
+A --> T : Photo
+T -> FS : Upload photo
+FS --> T : Photo ID
+T -> T :  Digitally sign claim details\n(claim info + photo ID)
+A -> S : Claim details + Signature
+S -> MDB : Add new unverified claim\nto user profile of T
+MDB --> S : Unverified claim ID
+S -> MDB : Add new unverified claim\nto main feed
+MDB --> S : OK
+S o-> U : Unverified claim ID
+
+== Verify action ==
+
+V -> S : View unverified claim by ID
+S -> MDB : Fetch unverified claim
+MDB --> S : Claim details
+S --> V : Claim details
+V -> FS : Fetch photo
+FS --> V : photo
+V -> V : Digitally sign claim vote\n(unverified claim ID + yes or no)
+V -> S : Claim vote + signature
+alt threshold vote count has been met
+    S -> MDB : Add new claim vote and\ntoggle to verified
+    MDB --> S : Verified claim details
+    S -> IDB : Record claim with votes
+    IDB --> S : Transaction ID
+    IDB o-> U : Events for claim and votes
+    S -> MDB : Update points for\nT and multiple Vs
+    MDB --> S : OK
+    S o-> L : Verified claim ID
+    S o-> U : Verified claim ID
+else threshold vote count has not yet been met
+    S -> MDB : Add new claim vote
+    MDB --> S : Unverified claim details
+    S o-> L : Unverified claim ID
+    S o-> U : Unverified claim ID
+end
+
+== Leaderboard listening for verified claims ==
+
+S o-> L : Claim ID
+L -> MDB : Fetch claim
+MDB --> L : Claim
+loop for each user in claim (T, multiple As)
+    opt user is performing first ever interaction
+        L -> MDB : Assign user to\nall-time leaderboard
+        MDB --> L : OK
+    end
+    opt user has not yet been assigned a weekly bucket yet
+        L -> MDB : Assign user to\nrelevant weekly bucket
+        MDB --> L : OK
+    end
+    L -> MDB : Update points in\nweekly bucket leaderboard
+    MDB --> L : OK
+    L -> MDB : Update points in\nall-time leaderboard
+    MDB --> L : OK
+end
+
+== Share on social media ==
+
+U -> SM : Share direct link
+SM -> S : Fetch unfurl data
+S --> SM : Unfurl data
+SM --> U : Display preview
+
+== Leaderboard weekly cron job ==
+
+L o-> L : Weekly cron job triggered
+loop for each weekly bucket
+    ' Sort by points to rank
+    loop for each user for winners within bucket
+        ' top X within bucket for the week get a badge
+        L -> L : Generate badge data
+        L -> FS : Image for badge
+        FS --> L : Badge image ID
+        L -> IDB : Badge NFT
+        IDB --> L : Badge ID
+        IDB o-> U : Events for new badge
+    end
+    loop for each users for tier change
+        ' top Y within bucket for the week\nget promoted to higher tier
+        ' top Z within bucket for the week\nget demoted to lower tier
+        L -> MDB : Update tier for user
+        MDB --> L : OK
+        L -> IDB : Update tier for user
+        IDB o-> U : Events for tier update
+    end
+end
+
+@enduml
+
+' bguiz 20200305
