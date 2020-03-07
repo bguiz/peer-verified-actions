@@ -47,6 +47,15 @@ An example:
 }
 ```
 
+## Planning
+
+- [Pain points and value proposition](./value-proposition.md)
+- [Distribution and go to market strategy](./distribution.md)
+- [Associated risks](./risks.md)
+- [Intended impact and its measurement](./impact.md)
+- [Technical specifications](./specifications.md)
+- [Development roadmap](./roadmap.md)
+
 ## Ideas for future improvement
 
 - This system is designed around using photographs as evidence of actions.
